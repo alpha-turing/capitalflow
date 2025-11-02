@@ -47,8 +47,17 @@ jobs:
       run: |
         echo "ENVIRONMENT=test" >> $GITHUB_ENV
         echo "DATABASE_URL=sqlite+aiosqlite:///:memory:" >> $GITHUB_ENV
-        echo "SECRET_KEY=test-secret-key-for-ci" >> $GITHUB_ENV
-        echo "ENCRYPTION_KEY=test-encryption-key-32-chars" >> $GITHUB_ENV
+        echo "SECRET_KEY=test-secret-key-for-ci-32-chars-min" >> $GITHUB_ENV
+        echo "ENCRYPTION_KEY=test-encryption-key-32-chars-min" >> $GITHUB_ENV
+        echo "REDIS_URL=redis://localhost:6379/0" >> $GITHUB_ENV
+        echo "CELERY_BROKER_URL=redis://localhost:6379/1" >> $GITHUB_ENV
+        echo "CELERY_RESULT_BACKEND=redis://localhost:6379/1" >> $GITHUB_ENV
+    
+    - name: Verify Python packages
+      run: |
+        python -c "import aiosqlite; print('✓ aiosqlite installed')"
+        python -c "import sqlalchemy; print('✓ SQLAlchemy installed')"
+        python -c "import pytest; print('✓ pytest installed')"
     
     - name: Run linting
       run: |
