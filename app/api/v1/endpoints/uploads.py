@@ -1,12 +1,13 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 import structlog
 
 from app.core.database import get_db
 from app.api.dependencies import get_current_user
 from app.ingestion.service import ingestion_service
-from app.db.models import User
+from app.db.models import User, Portfolio
 
 
 router = APIRouter()
@@ -23,6 +24,20 @@ async def upload_file(
     """Upload financial statement files"""
     
     try:
+        # Validate portfolio exists and belongs to current user
+        portfolio_stmt = select(Portfolio).where(
+            Portfolio.id == portfolio_id,
+            Portfolio.user_id == current_user.id
+        )
+        portfolio_result = await db.execute(portfolio_stmt)
+        portfolio = portfolio_result.scalar_one_or_none()
+        
+        if not portfolio:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Portfolio {portfolio_id} not found or access denied"
+            )
+        
         results = []
         
         for file in files:

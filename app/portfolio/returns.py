@@ -1,11 +1,18 @@
 from typing import List, Dict, Tuple, Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from dataclasses import dataclass
 import structlog
 import math
 
 from app.db.models import Transaction, TransactionType, Currency
+
+
+def _normalize_datetime(dt: datetime) -> datetime:
+    """Ensure datetime is timezone-aware by adding UTC if naive"""
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt
 
 
 @dataclass
@@ -156,8 +163,8 @@ class ReturnsCalculator:
                 
                 # Annualize if we have the time period
                 if len(sorted_values) >= 2:
-                    start_date = sorted_values[0][0]
-                    end_date = sorted_values[-1][0]
+                    start_date = _normalize_datetime(sorted_values[0][0])
+                    end_date = _normalize_datetime(sorted_values[-1][0])
                     days = (end_date - start_date).days
                     
                     if days > 0:
@@ -194,8 +201,8 @@ class ReturnsCalculator:
         # Sort transactions by date
         sorted_transactions = sorted(transactions, key=lambda t: t.transaction_date)
         
-        start_date = sorted_transactions[0].transaction_date
-        end_date = valuation_date
+        start_date = _normalize_datetime(sorted_transactions[0].transaction_date)
+        end_date = _normalize_datetime(valuation_date)
         days_invested = (end_date - start_date).days
         
         # Calculate total invested (net cash outflows)
@@ -305,8 +312,8 @@ class ReturnsCalculator:
             return None
         
         # Convert dates to years from first date
-        base_date = dates[0]
-        years = [(date - base_date).days / 365.25 for date in dates]
+        base_date = _normalize_datetime(dates[0])
+        years = [(_normalize_datetime(date) - base_date).days / 365.25 for date in dates]
         
         # Newton-Raphson iteration
         rate = guess

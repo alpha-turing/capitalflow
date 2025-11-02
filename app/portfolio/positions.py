@@ -114,13 +114,18 @@ class TaxLotManager:
     ) -> Tuple[List[TaxLot], List[RealizedGain]]:
         """Process a purchase transaction"""
         
+        # Calculate true cost per share from gross amount (includes all fees)
+        # If gross_amount is available, use it; otherwise fall back to price
+        cost_basis = transaction.net_amount or transaction.gross_amount
+        cost_per_share = cost_basis / transaction.quantity if transaction.quantity > 0 else transaction.price
+        
         # Create new tax lot
         new_lot = TaxLot(
             position_id="",  # Will be set by caller
             transaction_id=transaction.id,
             quantity=transaction.quantity,
             remaining_quantity=transaction.quantity,
-            cost_per_share=transaction.price,
+            cost_per_share=cost_per_share,
             acquisition_date=transaction.transaction_date,
             is_closed=False
         )
@@ -132,7 +137,7 @@ class TaxLotManager:
             "Created new tax lot",
             transaction_id=transaction.id,
             quantity=str(transaction.quantity),
-            cost_per_share=str(transaction.price)
+            cost_per_share=str(cost_per_share)
         )
         
         return updated_lots, []
@@ -340,12 +345,15 @@ class PositionCalculator:
             unrealized_pnl = market_value - remaining_cost
         
         # Convert tax lots to snapshots
-        valuation_date = valuation_date or datetime.now()
+        valuation_date = valuation_date or datetime.now(timezone.utc)
         tax_lot_snapshots = []
         
         for lot in tax_lots:
             if lot.remaining_quantity > 0:
-                holding_days = (valuation_date - lot.acquisition_date).days
+                # Normalize datetimes to prevent timezone issues
+                normalized_valuation_date = _normalize_datetime(valuation_date)
+                normalized_acquisition_date = _normalize_datetime(lot.acquisition_date)
+                holding_days = (normalized_valuation_date - normalized_acquisition_date).days
                 snapshot = TaxLotSnapshot(
                     acquisition_date=lot.acquisition_date,
                     quantity=lot.quantity,

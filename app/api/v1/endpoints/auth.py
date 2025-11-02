@@ -100,6 +100,9 @@ async def register(user_data: UserRegister, db: AsyncSession = Depends(get_db)):
             created_at=new_user.created_at
         )
         
+    except HTTPException:
+        await db.rollback()
+        raise
     except Exception as e:
         await db.rollback()
         logger.error("Registration failed", error=str(e))

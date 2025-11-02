@@ -1,12 +1,17 @@
-from sqlalchemy import String, Numeric, DateTime, Date, Boolean, Text, Enum, ForeignKey, Index
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.dialects.postgresql import JSONB
+import enum
+import os
 from decimal import Decimal
 from datetime import datetime, date
 from typing import Optional, List
-import enum
+
+from sqlalchemy import String, Numeric, DateTime, Date, Boolean, Text, Enum, ForeignKey, Index, JSON
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.dialects.postgresql import JSONB
 
 from app.core.database import Base
+
+# Use JSON for SQLite (tests) and JSONB for PostgreSQL (production)
+JsonType = JSON if "sqlite" in os.environ.get("DATABASE_URL", "").lower() else JSONB
 
 
 class AssetClass(str, enum.Enum):
@@ -208,7 +213,7 @@ class Transaction(Base):
     
     # Additional metadata
     notes: Mapped[Optional[str]] = mapped_column(Text)
-    extra_data: Mapped[Optional[dict]] = mapped_column(JSONB)
+    extra_data: Mapped[Optional[dict]] = mapped_column(JsonType)
     
     # Relationships
     portfolio: Mapped["Portfolio"] = relationship("Portfolio", back_populates="transactions")
@@ -332,7 +337,7 @@ class FileUpload(Base):
     
     # Results
     transactions_imported: Mapped[int] = mapped_column(default=0)
-    errors: Mapped[Optional[List[str]]] = mapped_column(JSONB)
+    errors: Mapped[Optional[List[str]]] = mapped_column(JsonType)
     
     # Source classification
     source_type: Mapped[str] = mapped_column(String(50))  # icici_direct, cams, kfin, vested, manual
@@ -385,11 +390,11 @@ class AuditLog(Base):
     user_agent: Mapped[Optional[str]] = mapped_column(Text)
     
     # Changes (for data modifications)
-    old_values: Mapped[Optional[dict]] = mapped_column(JSONB)
-    new_values: Mapped[Optional[dict]] = mapped_column(JSONB)
+    old_values: Mapped[Optional[dict]] = mapped_column(JsonType)
+    new_values: Mapped[Optional[dict]] = mapped_column(JsonType)
     
     # Additional context
-    extra_metadata: Mapped[Optional[dict]] = mapped_column(JSONB)
+    extra_metadata: Mapped[Optional[dict]] = mapped_column(JsonType)
     
     __table_args__ = (
         Index("idx_audit_log_user", "user_id"),

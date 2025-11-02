@@ -20,13 +20,26 @@ class Base(DeclarativeBase):
     )
 
 
-# Create async engine
-engine = create_async_engine(
-    settings.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://"),
-    pool_size=settings.DATABASE_POOL_SIZE,
-    max_overflow=settings.DATABASE_MAX_OVERFLOW,
-    echo=settings.DEBUG,
-)
+# Create async engine with conditional parameters based on database type
+database_url = settings.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")
+
+if "sqlite" in database_url:
+    # SQLite configuration (for tests)
+    from sqlalchemy.pool import StaticPool
+    engine = create_async_engine(
+        database_url,
+        poolclass=StaticPool,
+        connect_args={"check_same_thread": False},
+        echo=settings.DEBUG,
+    )
+else:
+    # PostgreSQL configuration (for production)
+    engine = create_async_engine(
+        database_url,
+        pool_size=settings.DATABASE_POOL_SIZE,
+        max_overflow=settings.DATABASE_MAX_OVERFLOW,
+        echo=settings.DEBUG,
+    )
 
 # Create session factory
 AsyncSessionLocal = async_sessionmaker(

@@ -32,10 +32,11 @@ class PortfolioService:
         
         valuation_date = valuation_date or datetime.now(timezone.utc)
         
-        # Get all transactions for the portfolio
+        # Get all transactions for the portfolio with instrument eagerly loaded
+        from sqlalchemy.orm import selectinload
         stmt = select(Transaction).where(
             Transaction.portfolio_id == portfolio_id
-        ).order_by(Transaction.transaction_date)
+        ).options(selectinload(Transaction.instrument)).order_by(Transaction.transaction_date)
         
         result = await db.execute(stmt)
         transactions = result.scalars().all()

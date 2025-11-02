@@ -239,7 +239,10 @@ class VestedCSVParser(BaseParser):
         
         for fmt in date_formats:
             try:
-                return datetime.strptime(date_str, fmt)
+                parsed_date = datetime.strptime(date_str, fmt)
+                # Make the datetime timezone-aware (UTC)
+                from datetime import timezone
+                return parsed_date.replace(tzinfo=timezone.utc)
             except ValueError:
                 continue
         

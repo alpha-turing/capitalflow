@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import text
 import structlog
 
 from app.core.database import get_db
 from app.api.dependencies import get_current_user
 from app.portfolio.service import portfolio_service
-from app.db.models import User
+from app.db.models import User, Portfolio
 
 
 router = APIRouter()
@@ -20,11 +21,13 @@ async def get_dashboard_summary(
     """Get user dashboard summary"""
     
     try:
-        # Get all user portfolios
-        portfolios = await db.execute(
-            "SELECT * FROM portfolios WHERE user_id = :user_id",
-            {"user_id": current_user.id}
-        )
+        # Get all user portfolios using SQLAlchemy ORM
+        from sqlalchemy.orm import selectinload
+        from sqlalchemy import select
+        
+        portfolios_stmt = select(Portfolio).where(Portfolio.user_id == current_user.id)
+        portfolios_result = await db.execute(portfolios_stmt)
+        portfolios = portfolios_result.scalars().all()
         
         dashboard_data = {
             "user_id": current_user.id,
@@ -39,7 +42,7 @@ async def get_dashboard_summary(
         total_invested = 0.0
         total_unrealized_pnl = 0.0
         
-        for portfolio in portfolios.fetchall():
+        for portfolio in portfolios:
             try:
                 summary = await portfolio_service.get_portfolio_summary(
                     db, portfolio.id
