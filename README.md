@@ -1,5 +1,10 @@
 # CapitalFlow 🚀
 
+[![Tests](https://github.com/alpha-turing/capitalflow/actions/workflows/tests.yml/badge.svg)](https://github.com/alpha-turing/capitalflow/actions/workflows/tests.yml)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![License: Proprietary](https://img.shields.io/badge/license-Proprietary-red.svg)](LICENSE)
+
 A unified financial portfolio tracking platform that aggregates data from multiple brokers and platforms, providing comprehensive analytics, capital gains reporting, and portfolio management capabilities.
 
 ## 🎯 MVP Complete - "One of the Greatest Products of All Time"
@@ -116,8 +121,9 @@ docker-compose exec api alembic upgrade head
 ### Code Quality
 - **Linting**: Black, isort, flake8
 - **Type Checking**: mypy
-- **Testing**: pytest with coverage
+- **Testing**: pytest with coverage (78 tests, 100% passing)
 - **Pre-commit**: Automated code quality checks
+- **CI/CD**: GitHub Actions for automated testing
 
 ### Testing
 ```bash
@@ -125,10 +131,56 @@ docker-compose exec api alembic upgrade head
 pytest
 
 # Run with coverage
-pytest --cov=app
+pytest --cov=app --cov-report=term-missing
 
 # Run specific test file
-pytest tests/test_portfolio_engine.py
+pytest tests/api/test_calculations.py -v
+
+# Run tests in quiet mode
+pytest -q
+```
+
+### Quality Guardrails
+
+**Protecting main branch from broken code:**
+
+1. **Local Git Hooks** (runs before commit/push)
+   ```bash
+   # Install git hooks for automatic testing
+   ./scripts/install-hooks.sh
+   
+   # Hooks will run:
+   # - pre-commit: Quick tests before each commit
+   # - pre-push: Full test suite before pushing to main
+   ```
+
+2. **GitHub Actions CI** (runs on every push/PR)
+   - Automatically tests all Python versions (3.11, 3.12)
+   - Runs on every push to main/develop
+   - Runs on all pull requests
+   - View results: [Actions tab](https://github.com/alpha-turing/capitalflow/actions)
+
+3. **Branch Protection** (requires setup on GitHub)
+   - See [Branch Protection Guide](.github/BRANCH_PROTECTION.md)
+   - Requires PR reviews before merging
+   - Requires all tests to pass
+   - Prevents force pushes to main
+
+**Recommended workflow:**
+```bash
+# 1. Create feature branch
+git checkout -b feature/my-feature
+
+# 2. Make changes and commit (tests run automatically)
+git commit -m "Add feature"
+
+# 3. Push (tests run automatically on main/develop)
+git push origin feature/my-feature
+
+# 4. Create PR on GitHub
+# 5. Wait for CI to pass ✅
+# 6. Get review approval
+# 7. Merge only when all checks pass
 ```
 
 ## API Documentation
