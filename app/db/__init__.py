@@ -1,0 +1,38 @@
+# Import all models here for SQLAlchemy registration
+from .models import (
+    User,
+    Portfolio,
+    Instrument,
+    Price,
+    Transaction,
+    Position,
+    TaxLot,
+    CorporateAction,
+    FileUpload,
+    ExchangeRate,
+    AuditLog,
+    ConsentLog,
+    AssetClass,
+    Currency,
+    Exchange,
+    TransactionType,
+)
+
+__all__ = [
+    "User",
+    "Portfolio", 
+    "Instrument",
+    "Price",
+    "Transaction",
+    "Position",
+    "TaxLot",
+    "CorporateAction",
+    "FileUpload",
+    "ExchangeRate",
+    "AuditLog",
+    "ConsentLog",
+    "AssetClass",
+    "Currency", 
+    "Exchange",
+    "TransactionType",
+]
